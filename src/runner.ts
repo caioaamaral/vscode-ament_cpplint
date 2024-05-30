@@ -1,41 +1,18 @@
+'use strict';
+
 import { spawnSync } from "child_process";
 import * as vscode from 'vscode';
-// import { ConfigManager } from "./configuration";
-import * as path from 'path';
-import * as which from "which"
+import which from "which"
 
 
-const supported_languages = ["c", "c++"]
+const supported_languages = ["c", "c++", "h", "hpp"];
 
-let cpplint_path
-which("cpplint", (err, cmd_path) => {
-    if (err) {
-        console.log("You fucked, no cpplint")
-        return;
-    }
-
-    cpplint_path = cmd_path
-
-})
-
-export function runOnFile() {
-    if (vscode.window.activeTextEditor == undefined) {
-        return  ""
-    }
+export async function runOnFile() {
     let activedoc = vscode.window.activeTextEditor.document;
     let filename = activedoc.fileName;
-    let workspacefolder = vscode.workspace.getWorkspaceFolder(activedoc.uri)
-    let workspaces = null;
-    if (workspacefolder != undefined) {
-        workspaces = [workspacefolder.uri.fsPath]
-    }
 
-    if (activedoc.languageId in supported_languages) {
-        let result = runCppLint(filename, workspaces, false);
-        return result;
-    } else {
-        return "";
-    }
+    let result = await runCppLint(filename, false);
+    return result;
 }
 
 export function runOnWorkspace() {
@@ -43,11 +20,13 @@ export function runOnWorkspace() {
     for (let folder of vscode.workspace.workspaceFolders) {
         workspaces = workspaces.concat(folder.uri.fsPath)
     }
-    let result = runCppLint(null, workspaces, true);
+    let result = runCppLint(null, true);
     return result;
 }
 
-export function runCppLint(filename: string, workspaces: string[], enableworkspace: boolean) {
+export async function runCppLint(filename: string, enableworkspace: boolean) {
+    const cpplint_path: string = await which("ament_cpplint");
+    // console.log(`[ament-cpplint] Found it! cpplint_path is: ${cpplint_path}`);
     let cpplint = cpplint_path;
     let output = lint(cpplint, [filename]);
     // let end = 'Ament-CppLint ended: ' + new Date().toString();
