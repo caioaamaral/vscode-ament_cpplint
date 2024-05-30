@@ -1,0 +1,152 @@
+{
+  "name": "ament-cpplint",
+  "displayName": "ament-cpplint",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.89.0"
+  },
+  "categories": [
+    "Linters"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "amanet-cpplint.runAnalysis",
+        "title": "Analyze current file",
+        "category": "cpplinter"
+      },
+      {
+          "command": "amanet-cpplint.runWholeAnalysis",
+          "title": "Analyze current workspace",
+          "category": "cpplinter"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "cpplint",
+      "properties": {
+          "cpplint.cpplintPath": {
+              "type": "string",
+              "default": "/usr/local/bin/cpplint",
+              "description": "The path to the cpplint executable. If not set, the default location will be used."
+          },
+          "cpplint.lintMode": {
+              "type": "string",
+              "default": "single",
+              "enum": [
+                  "single",
+                  "workspace"
+              ],
+              "description": "single is fast, only provides information of current active file, workspace is slow, provides informations of the whole workspace"
+          },
+          "cpplint.lineLength": {
+              "type": "number",
+              "default": 80,
+              "description": "This is the allowed line length for the project."
+          },
+          "cpplint.excludes": {
+              "type": "array",
+              "default": [],
+              "description": "Exclude the given path from the list of files to be linted.Relative paths are evaluated relative to the current directory and shell globbing is performed"
+          },
+          "cpplint.filters": {
+              "type": "array",
+              "default": [],
+              "description": "Specify a comma-separated list of category-filters to apply: only error messages whose category names pass the filters will be printed."
+          },
+          "cpplint.verbose": {
+              "type": "number",
+              "default": 0,
+              "enum": [
+                  0,
+                  1,
+                  2,
+                  4,
+                  5
+              ],
+              "description": "Specify a number 0-5 to restrict errors to certain verbosity levels. Errors with lower verbosity levels have lower confidence and are more likely to be false positives."
+          },
+          "cpplint.repository": {
+              "type": "string",
+              "default": "${workspaceFolder}",
+              "description": "The top level directory of the repository, used to derive the header guard CPP variable. By default, this is determined by searching for a path that contains .git, .hg, or .svn. When this flag is specified, the given path is used instead. This option allows the header guard CPP variable to remain consistent even if members of a team have different repository root directories (such as when checking out a subdirectory with SVN). In addition, users of non-mainstream version control systems can use this flag to ensure readable header guard CPP variables."
+          },
+          "cpplint.root": {
+              "type": "string",
+              "default": "${workspaceFolder}/include",
+              "description": "The root directory used for deriving header guard CPP variables. This directory is relative to the top level directory of the repository which by default is determined by searching for a directory that contains .git, .hg, or .svn but can also be controlled with the --repository flag. If the specified directory does not exist, this flag is ignored."
+          },
+          "cpplint.extensions": {
+              "type": "array",
+              "default": [
+                  "cpp",
+                  "h++",
+                  "cuh",
+                  "c",
+                  "c++",
+                  "cu",
+                  "hxx",
+                  "hpp",
+                  "cc",
+                  "cxx",
+                  "h"
+              ],
+              "description": "The allowed file extensions that cpplint will check."
+          },
+          "cpplint.languages": {
+              "type": "array",
+              "default": [
+                  "cpp",
+                  "c"
+              ],
+              "description": "The allowed vscode language identifiers that cpplint will check."
+          },
+          "cpplint.headers": {
+              "type": "array",
+              "default": [
+                  "h++",
+                  "cuh",
+                  "hxx",
+                  "hpp",
+                  "h"
+              ],
+              "description": "The allowed header extensions that cpplint will consider to be header files."
+          }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.89.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "18.x",
+    "@typescript-eslint/eslint-plugin": "^7.7.1",
+    "@typescript-eslint/parser": "^7.7.1",
+    "eslint": "^8.57.0",
+    "esbuild": "^0.20.2",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.4.5",
+    "@vscode/test-cli": "^0.0.9",
+    "@vscode/test-electron": "^2.3.9"
+  },
+  "dependencies": {
+    "lodash": "^4.17.4",
+    "which": "4.0.0"
+  }
+}
