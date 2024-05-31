@@ -4,9 +4,10 @@
 import * as vscode from 'vscode';
 import * as an from './runner';
 import { Lint, analysisResult } from './lint';
+import * as helpers from './helpers'
+import { debug } from './logger'
 
 let outputChannel: vscode.OutputChannel;
-export let debugChannel: vscode.OutputChannel;
 let timer: NodeJS.Timeout;
 
 let diagnosticCollection: vscode.DiagnosticCollection = vscode.languages.createDiagnosticCollection('ament-cpplint');
@@ -15,9 +16,7 @@ let diagnosticCollection: vscode.DiagnosticCollection = vscode.languages.createD
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
     outputChannel = vscode.window.createOutputChannel('Ament-CppLint');
-    debugChannel = vscode.window.createOutputChannel('DEBUG');
     outputChannel.show(true);
-    debugChannel.show();
     
     // Use the console to output diagnostic information (console.log) and errors (console.error)
     // This line of code will only be executed once when your extension is activated
@@ -29,32 +28,39 @@ export function activate(context: vscode.ExtensionContext) {
     // Now provide the implementation of the command with  registerCommand
     // The commandId parameter must match the command field in package.json
 
-    let single = vscode.commands.registerCommand('ament-cpplint.runAnalysis', runAnalysis);
+    let single = vscode.commands.registerCommand('ament-cpplint.check-file', checkActiveFile);
     context.subscriptions.push(single);
 
-    let whole = vscode.commands.registerCommand('ament-cpplint.runWholeAnalysis', runWholeAnalysis);
+    let whole = vscode.commands.registerCommand('ament-cpplint.check-workspace', checkActiveWorkspace);
     context.subscriptions.push(whole);
 
-    vscode.workspace.onDidChangeConfiguration((()=>loadConfigure()).bind(this));
+    context.subscriptions.push(this);
+    // vscode.workspace.onDidChangeConfiguration((()=>loadConfigure()).bind(this));
+    vscode.workspace.onDidChangeConfiguration(this.loadConfigure, this);
 }
 
-async function runAnalysis(): Promise<void> {
+async function checkActiveFile(): Promise<void> {
     var edit = vscode.window.activeTextEditor;
     if (edit == undefined) {
         return Promise.reject("no edit opened");
     }
     
+    const activeDoc = vscode.window.activeTextEditor.document;
+    
+    if (!helpers.isSupportedLanguage(activeDoc)) {
+        debug(`${activeDoc.fileName} type, which is ${activeDoc.languageId}, is not supported`)
+        return;
+    }
+
     let start = 'Ament-CppLint started: ' + new Date().toString();
     outputChannel.appendLine(start);
     
-    let cpplintOutput = await an.runOnFile();
+    let cpplintOutput = await an.runOnDocument(activeDoc);
     console.log(`[ament-cpplint] linter output: ${cpplintOutput}`)
     
-    debugChannel.appendLine(`[ament-cpplint] analysisResult start:`)
+    debug(`[ament-cpplint] analysisResult start:`)
     analysisResult(diagnosticCollection, cpplintOutput)
-    debugChannel.appendLine(`[ament-cpplint] analysisResult end:`)
-
-    outputChannel.appendLine(cpplintOutput);
+    debug(`[ament-cpplint] analysisResult end:`)
 
     let end = 'Ament-CppLint ended: ' + new Date().toString();
     outputChannel.appendLine(end);
@@ -62,20 +68,22 @@ async function runAnalysis(): Promise<void> {
     return Promise.resolve()
 }
 
-async function runWholeAnalysis(): Promise<void> {
-    outputChannel.show();
-    outputChannel.clear();
-
-    let start = 'Ament-CppLint started: ' + new Date().toString();
+async function checkActiveWorkspace(): Promise<void> {
+    const start = 'Ament-CppLint[checkActiveWorkspace] started: ' + new Date().toString();
     outputChannel.appendLine(start);
 
-    let result = await an.runOnWorkspace();
-    outputChannel.appendLine(result);
+    const results = await an.runOnWorkspace();
+    debug(`.[checkActiveWorkspace]: Got ${results.length} results`)
+
+    results.forEach(async (p_result: Promise<string>) => {
+        const result = await p_result;
+        analysisResult(diagnosticCollection, result)
+        outputChannel.appendLine(result);
+    });
 
     let end = 'Ament-CppLint ended: ' + new Date().toString();
     outputChannel.appendLine(end);
 
-    // vscode.window.showInformationMessage(edit.document.uri.fsPath)
     return Promise.resolve()
 }
 
@@ -95,12 +103,8 @@ function doLint() {
     clearTimeout(timer)
 }
 
-function startLint2() {
-    timer = global.setTimeout(doLint, 500);
-}
-
-function loadConfigure() {
-    startLint2();
-    vscode.window.onDidChangeActiveTextEditor((() => startLint2()).bind(this));
-    vscode.workspace.onDidSaveTextDocument((() => startLint2()).bind(this));
+function loadConfigure() {    
+    vscode.workspace.onDidSaveTextDocument((() => {
+        timer = global.setTimeout(doLint, 500);
+    }).bind(this));
 }

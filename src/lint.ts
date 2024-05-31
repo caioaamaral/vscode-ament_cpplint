@@ -5,8 +5,8 @@
  */
 
 import * as vscode from 'vscode';
-import { runOnFile } from './runner';
-import { debugChannel } from './extension';
+import { runOnDocument } from './runner';
+import { debug } from './logger';
 
 
 function cpplintSeverityToDiagnosticSeverity(severity: string): vscode.DiagnosticSeverity {
@@ -21,7 +21,7 @@ function cpplintSeverityToDiagnosticSeverity(severity: string): vscode.Diagnosti
 }
 
 export function analysisResult(diagnosticCollection: vscode.DiagnosticCollection, result: string) {
-    debugChannel.appendLine(`[ament-cpplint] analysing:\n ${result}`);
+    debug(`[ament-cpplint] analysing:\n ${result}`);
     diagnosticCollection.clear();
     const lines = result.split('\n');
     
@@ -31,7 +31,7 @@ export function analysisResult(diagnosticCollection: vscode.DiagnosticCollection
         const regex = /^(.*):([0-9]+):(.*\s+\[.*\])\s+\[([0-9]+)\]/gm;
         const matches = regex.exec(line);
         if (matches) {
-            debugChannel.appendLine(`[ament-cpplint] GOT MATCH!`)
+            debug(`[ament-cpplint] GOT MATCH!`)
             const fileName = matches[1]
             if (!(fileName in fileData)) fileData[fileName] = [];
 
@@ -59,6 +59,6 @@ export function analysisResult(diagnosticCollection: vscode.DiagnosticCollection
 }
 
 export async function Lint(diagnosticCollection: vscode.DiagnosticCollection) {
-    const cpplintOutput = await runOnFile();
-    analysisResult(diagnosticCollection, cpplintOutput)
+    // const cpplintOutput = await runOnDocument();
+    // analysisResult(diagnosticCollection, cpplintOutput)
 }

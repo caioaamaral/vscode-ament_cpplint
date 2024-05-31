@@ -9,19 +9,22 @@
   "categories": [
     "Linters"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:cpp",
+    "onLanguage:c++"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "ament-cpplint.runAnalysis",
+        "command": "ament-cpplint.check-file",
         "title": "Analyze current file",
         "category": "ament-cpplint"
       },
       {
-          "command": "ament-cpplint.runWholeAnalysis",
-          "title": "Analyze current workspace",
-          "category": "ament-cpplint"
+        "command": "ament-cpplint.check-workspace",
+        "title": "Analyze current workspace",
+        "category": "ament-cpplint"
       }
     ]
   },
